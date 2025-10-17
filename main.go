@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// RTCType 表示底层 RTC 服务类型
+// RTCType represents the underlying RTC service type
 type RTCType string
 
 const (
@@ -19,7 +19,7 @@ const (
 	RTC_AGORA RTCType = "Agora"
 )
 
-// RoomType 表示房间模式
+// RoomType represents the room mode/type
 type RoomType string
 
 const (
@@ -27,13 +27,7 @@ const (
 	RoomAudio RoomType = "Audio"
 )
 
-// Link 表示两条链路及其分配比例
-type Link struct {
-	Name  string  `json:"name"`
-	Share float64 `json:"share"` // 比例，如 0.6 或 0.4
-}
-
-// Room 为返回给客户端的房间信息结构
+// Room is the structure returned to clients with room information
 type Room struct {
 	RoomID      string   `json:"room_id"`
 	OwnerUserID string   `json:"owner_userid"`
@@ -44,7 +38,7 @@ type Room struct {
 
 type CreateRoomRequest struct {
 	UserID   string `json:"userid"`
-	RoomType string `json:"room_type"` // Live 或 Audio
+	RoomType string `json:"room_type"` // Live or Audio
 }
 
 type DestroyRoomRequest struct {
@@ -60,31 +54,28 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-// chooseRTC 根据比例来随机分配rtc房间类型
-// 规则 TRTC:Agora => 6:4
-// 0-5 => TRTC
-// 6-9 => Agora
+// chooseRTC selects an RTC type according to a 6:4 distribution
+// Rule: 0-5 => TRTC
+//       6-9 => Agora
 func chooseRTC() RTCType {
-	// 生成的是 0-9 的随机数
+	// generate a random integer 0-9
 	u := rand.Intn(10)
-	// 使用 switch 对随机数进行判断：0-5 => TRTC，6-9 => Agora
+	// use switch on the random number: 0-5 => TRTC, 6-9 => Agora
 	switch u {
 	case 0, 1, 2, 3, 4, 5:
 		return RTC_TRTC
 	case 6, 7, 8, 9:
 		return RTC_AGORA
 	default:
-		// 按要求 userid 必定为数字字符，这里作为兜底返回 TRTC
 		return RTC_TRTC
 	}
 }
 
 func generateRoomID(userid string) string {
-	// return strconv.FormatInt(time.Now().UnixNano(), 36) + "-" + strconv.Itoa(rand.Intn(10000))
 	return "rm_" + userid
 }
 
-// createRoomHandler 创建房间接口
+// createRoomHandler handles room creation requests
 func createRoomHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -120,7 +111,7 @@ func createRoomHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(room)
 }
 
-// destroyRoomHandler 解散房间接口
+// destroyRoomHandler handles room destruction requests
 func destroyRoomHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -143,7 +134,7 @@ func destroyRoomHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"result": "ok"})
 }
 
-// listRoomsHandler 列出所有房间（调试用）
+// listRoomsHandler lists all rooms (for debugging)
 func listRoomsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -158,7 +149,7 @@ func listRoomsHandler(w http.ResponseWriter, r *http.Request) {
 		list = append(list, v)
 	}
 
-	// Sort by CreateTime in descending order
+	// sort by CreateTime descending
 	sort.Slice(list, func(i, j int) bool {
 		return list[i].CreateTime > list[j].CreateTime
 	})
